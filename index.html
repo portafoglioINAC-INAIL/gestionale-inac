@@ -225,6 +225,7 @@ tr:last-child td{border-bottom:none}
       <div class="header-subtitle">Gestionale Pratiche Malattia Professionale</div>
     </div>
     <div class="header-user">
+      <a href="consulenza.html" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid rgba(255,255,255,.35);border-radius:7px;color:#fff;font-size:12px;font-weight:700;text-decoration:none;font-family:Nunito,sans-serif;white-space:nowrap" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='transparent'">&#43; Nuova consulenza</a>
       <div class="header-user-info">
         <div class="header-user-name" id="user-name">--</div>
         <div class="header-user-role" id="user-role">Operatore</div>
@@ -693,7 +694,7 @@ function renderPratiche(){
         <strong>${g.patologia||'Patologia non specificata'}</strong>
         ${g.punt_riconosciuto?`<span class="domanda-punt">Punteggio riconosciuto: ${g.punt_riconosciuto}</span>`:''}
         <div class="domanda-actions">
-          <button class="btn btn-edit" onclick="apriFormDomanda('${key}')">Modifica️ Modifica</button>
+          <button class="btn btn-edit" onclick="apriFormDomanda('${key}')">Modifica Modifica</button>
           <button class="btn btn-danger" onclick="delDomanda('${g.ncaso||'__'}','${g.patologia||'__'}')">🗑 Elimina</button>
         </div>
       </div>
@@ -879,7 +880,7 @@ async function archiviaGiornata(data,med){
   for(const a of daArchiviare){await db.from('appuntamenti').update({storico:true}).eq('id',a.id);}
   await loadAppuntamenti();renderMed();showToast('Giornata archiviata');
 }
-function aCard(a,med,isStor=false){const hasD=a.data_appuntamento&&a.ora_appuntamento;const oraEl=hasD?`<div class="a-ora">${a.ora_appuntamento.substring(0,5)}</div>`:`<div class="a-ora vuota">In<br>attesa</div>`;const opStr=a.operatore?`<span class="pill pill-op">👤 ${a.operatore}</span>`:'';let acts='';if(!isStor){if(!hasD)acts+=`<button class="btn btn-success" onclick="apriFissa('${a.id}')">📅 Fissa</button>`;acts+=`<div style="display:flex;gap:4px;margin-top:5px"><button class="btn btn-edit" onclick="editAppt('${a.id}')">Modifica️</button><button class="btn btn-danger" onclick="archAppt('${a.id}')">Archivia</button><button class="btn btn-danger" onclick="delAppt('${a.id}')">🗑</button></div>`;}else{acts=`<button class="btn btn-ghost" onclick="ripAppt('${a.id}')">Ripristina Ripristina</button>`;}return`<div class="a-card ${hasD&&!isStor?'fissato':''} ${isStor?'storico':''}">${oraEl}<div class="a-body"><div class="a-nome" style="cursor:pointer;text-decoration:underline dotted" onclick="apriClienteDaNome('${a.nome_paziente}')">${a.nome_paziente}</div><div style="margin:3px 0"><span class="badge ${rCls(a.richiesta)}">${rLabel(a.richiesta)}</span>${a.patologia&&a.richiesta==='primo'?` <span style="font-size:11px;color:var(--text-light)">- ${a.patologia}</span>`:''}</div><div class="a-meta">${a.data_appuntamento?`<span>📅 ${fmtD(a.data_appuntamento)}</span>`:''}${a.telefono?`<span>Tel. ${a.telefono}</span>`:''}${opStr}</div>${a.note?`<div style="font-size:12px;color:var(--text-mid);margin-top:4px;font-style:italic">${a.note}</div>`:''}</div><div class="a-actions">${acts}</div></div>`;}
+function aCard(a,med,isStor=false){const hasD=a.data_appuntamento&&a.ora_appuntamento;const oraEl=hasD?`<div class="a-ora">${a.ora_appuntamento.substring(0,5)}</div>`:`<div class="a-ora vuota">In<br>attesa</div>`;const opStr=a.operatore?`<span class="pill pill-op">👤 ${a.operatore}</span>`:'';let acts='';if(!isStor){if(!hasD)acts+=`<button class="btn btn-success" onclick="apriFissa('${a.id}')">📅 Fissa</button>`;acts+=`<div style="display:flex;gap:4px;margin-top:5px"><button class="btn btn-edit" onclick="editAppt('${a.id}')">Modifica</button><button class="btn btn-danger" onclick="archAppt('${a.id}')">Archivia</button><button class="btn btn-danger" onclick="delAppt('${a.id}')">🗑</button></div>`;}else{acts=`<button class="btn btn-ghost" onclick="ripAppt('${a.id}')">Ripristina Ripristina</button>`;}return`<div class="a-card ${hasD&&!isStor?'fissato':''} ${isStor?'storico':''}">${oraEl}<div class="a-body"><div class="a-nome" style="cursor:pointer;text-decoration:underline dotted" onclick="apriClienteDaNome('${a.nome_paziente}')">${a.nome_paziente}</div><div style="margin:3px 0"><span class="badge ${rCls(a.richiesta)}">${rLabel(a.richiesta)}</span>${a.patologia&&a.richiesta==='primo'?` <span style="font-size:11px;color:var(--text-light)">- ${a.patologia}</span>`:''}</div><div class="a-meta">${a.data_appuntamento?`<span>📅 ${fmtD(a.data_appuntamento)}</span>`:''}${a.telefono?`<span>Tel. ${a.telefono}</span>`:''}${opStr}</div>${a.note?`<div style="font-size:12px;color:var(--text-mid);margin-top:4px;font-style:italic">${a.note}</div>`:''}</div><div class="a-actions">${acts}</div></div>`;}
 function togStor(){storVis=!storVis;renderMed();}
 function apriClienteDaNome(nome){
   const c=clienti.find(x=>x.nome===nome);
