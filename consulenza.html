@@ -445,6 +445,7 @@ html,body{height:100%;background:var(--sand);font-family:'Nunito',sans-serif;col
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="generaPDF()">&#128196; Genera PDF</button>
         <button class="btn" onclick="salvaPortafoglio()">&#128190; Salva nel portafoglio</button>
+        <button class="btn" onclick="tornaGestionale()" style="border-color:#C0392B;color:#C0392B" onmouseover="this.style.background='#FCE8E6'" onmouseout="this.style.background='#fff'">&#10006; Fine — torna al gestionale</button>
       </div>
       <div class="nav-row">
         <button class="btn" onclick="goTo(5)">&#8592; Indietro</button>
@@ -821,6 +822,16 @@ function showMsg(txt,isErr){
   const el=document.getElementById('save-msg');
   el.innerHTML='<div class="alert '+(isErr?'alert-err':'alert-ok')+'">'+txt+'</div>';
   setTimeout(()=>{el.innerHTML='';},5000);
+}
+
+// ---- TORNA AL GESTIONALE ----
+function tornaGestionale(){
+  if(window.opener){
+    window.opener.focus();
+    window.close();
+  } else {
+    window.location.href='index.html';
+  }
 }
 
 // ---- GENERA PDF ----

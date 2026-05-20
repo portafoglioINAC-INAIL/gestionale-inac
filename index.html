@@ -406,7 +406,13 @@ tr:last-child td{border-bottom:none}
       <div class="field"><label>Codice Fiscale</label><input id="f-cf" style="text-transform:uppercase"></div>
       <div class="field"><label>Città di provenienza</label><input id="f-citta"></div>
       <div class="field"><label>Stato cliente</label><select id="f-stato"><option>Nuovo cliente</option><option>Vecchio cliente</option></select></div>
-      <div class="field"><label>Data prima consulenza</label><input type="date" id="f-data"></div>
+      <div class="field"><label>Data prima consulenza</label><input type="date" id="f-data" oninput="togConsulenza(this.value)"></div>
+      <div id="wrap-consulenza" style="display:none">
+        <div class="field full"><label>Link consulenza (PDF Google Drive)</label>
+          <div class="url-row"><input id="f-consulenza-url" placeholder="Link Google Drive PDF consulenza (condivisibile)..."></div>
+          <div class="hint">Il link deve essere accessibile a chiunque lo possieda.</div>
+        </div>
+      </div>
       <div class="field"><label>Tipologia lavoratore</label><select id="f-tipo"><option>Dipendente</option><option>Autonomo</option></select></div>
       <div class="field full"><label>Mansione</label><input id="f-mansione"></div>
       <div class="field full"><label>Mod. 22SS</label>
@@ -590,6 +596,7 @@ function chiudiOv(id){
 }
 function switchTab(name,el){document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('tp-'+name).classList.add('active');if(name==='pratiche')renderPratiche();if(name==='promemoria')renderProm();}
 function tog22(v){document.getElementById('wrap-22ss').style.display=v==='Presente'?'block':'none';}
+function togConsulenza(v){document.getElementById('wrap-consulenza').style.display=v?'block':'none';}
 function togDc(v){document.getElementById('wrap-dc').style.display=v==='Presente'?'block':'none';}
 
 // Raggruppa le pratiche per ncaso+patologia = una domanda MP
@@ -650,13 +657,13 @@ function renderClienti(){
   renderStats();
 }
 
-function apriNuovoCliente(){cidx=-1;cidUUID=null;document.getElementById('m-titolo').textContent='Nuovo cliente';['f-nome','f-cf','f-citta','f-mansione','f-22ss-url','f-punteggio-totale'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-stato').value='Nuovo cliente';document.getElementById('f-tipo').value='Dipendente';document.getElementById('f-22ss').value='Assente';document.getElementById('f-data').value='';document.getElementById('wrap-22ss').style.display='none';document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===0));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===0));apriOv('ov-cliente');}
-function apriCliente(id,tab){cidUUID=id;cidx=clienti.findIndex(c=>c.id===id);const c=clienti[cidx];document.getElementById('m-titolo').textContent=c.nome;document.getElementById('f-nome').value=c.nome||'';document.getElementById('f-cf').value=c.cf||'';document.getElementById('f-citta').value=c.citta||'';document.getElementById('f-stato').value=c.stato||'Nuovo cliente';document.getElementById('f-data').value=c.data_consulenza||'';document.getElementById('f-tipo').value=c.tipo||'Dipendente';document.getElementById('f-mansione').value=c.mansione||'';document.getElementById('f-22ss').value=c.mod_22ss||'Assente';document.getElementById('f-22ss-url').value=c.url_22ss||'';document.getElementById('f-punteggio-totale').value=c.punteggio_totale||'';document.getElementById('wrap-22ss').style.display=c.mod_22ss==='Presente'?'block':'none';const tabs=['anagrafica','pratiche','promemoria'];document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',tabs[i]===tab));document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));document.getElementById('tp-'+tab).classList.add('active');if(tab==='pratiche')renderPratiche();if(tab==='promemoria')renderProm();apriOv('ov-cliente');}
+function apriNuovoCliente(){cidx=-1;cidUUID=null;document.getElementById('m-titolo').textContent='Nuovo cliente';['f-nome','f-cf','f-citta','f-mansione','f-22ss-url','f-consulenza-url','f-punteggio-totale'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-stato').value='Nuovo cliente';document.getElementById('f-tipo').value='Dipendente';document.getElementById('f-22ss').value='Assente';document.getElementById('f-data').value='';document.getElementById('wrap-22ss').style.display='none';document.getElementById('wrap-consulenza').style.display='none';document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===0));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===0));apriOv('ov-cliente');}
+function apriCliente(id,tab){cidUUID=id;cidx=clienti.findIndex(c=>c.id===id);const c=clienti[cidx];document.getElementById('m-titolo').textContent=c.nome;document.getElementById('f-nome').value=c.nome||'';document.getElementById('f-cf').value=c.cf||'';document.getElementById('f-citta').value=c.citta||'';document.getElementById('f-stato').value=c.stato||'Nuovo cliente';document.getElementById('f-data').value=c.data_consulenza||'';document.getElementById('f-tipo').value=c.tipo||'Dipendente';document.getElementById('f-mansione').value=c.mansione||'';document.getElementById('f-22ss').value=c.mod_22ss||'Assente';document.getElementById('f-22ss-url').value=c.url_22ss||'';document.getElementById('f-consulenza-url').value=c.url_consulenza||'';togConsulenza(c.data_consulenza||'');document.getElementById('f-punteggio-totale').value=c.punteggio_totale||'';document.getElementById('wrap-22ss').style.display=c.mod_22ss==='Presente'?'block':'none';const tabs=['anagrafica','pratiche','promemoria'];document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',tabs[i]===tab));document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));document.getElementById('tp-'+tab).classList.add('active');if(tab==='pratiche')renderPratiche();if(tab==='promemoria')renderProm();apriOv('ov-cliente');}
 
 async function salvaCliente(){
   if(_saving)return;_saving=true;
   try{
-    const obj={nome:document.getElementById('f-nome').value.trim(),cf:document.getElementById('f-cf').value.trim().toUpperCase(),citta:document.getElementById('f-citta').value.trim(),stato:document.getElementById('f-stato').value,data_consulenza:document.getElementById('f-data').value||null,tipo:document.getElementById('f-tipo').value,mansione:document.getElementById('f-mansione').value.trim(),mod_22ss:document.getElementById('f-22ss').value,url_22ss:document.getElementById('f-22ss-url').value.trim(),punteggio_totale:document.getElementById('f-punteggio-totale').value.trim()};
+    const obj={nome:document.getElementById('f-nome').value.trim(),cf:document.getElementById('f-cf').value.trim().toUpperCase(),citta:document.getElementById('f-citta').value.trim(),stato:document.getElementById('f-stato').value,data_consulenza:document.getElementById('f-data').value||null,tipo:document.getElementById('f-tipo').value,mansione:document.getElementById('f-mansione').value.trim(),mod_22ss:document.getElementById('f-22ss').value,url_22ss:document.getElementById('f-22ss-url').value.trim(),url_consulenza:document.getElementById('f-consulenza-url').value.trim(),punteggio_totale:document.getElementById('f-punteggio-totale').value.trim()};
     if(!obj.nome){alert('Inserisci almeno il nome');return;}
     let error;
     if(cidUUID){const res=await db.from('clienti').update(obj).eq('id',cidUUID);error=res.error;}
