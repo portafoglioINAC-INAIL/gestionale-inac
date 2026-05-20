@@ -543,7 +543,30 @@ let _saving=false;
 
 async function loginGoogle(){const{error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://portafoglioinac-inail-mc.netlify.app/'}});if(error)showToast('Errore: '+error.message,true);}
 async function logout(){await db.auth.signOut();window.location.reload();}
-async function initAuth(){const{data:{session}}=await db.auth.getSession();if(session)await handleSession(session);else showLogin();db.auth.onAuthStateChange(async(event,session)=>{if(event==='SIGNED_IN'&&session)await handleSession(session);else if(event==='SIGNED_OUT')showLogin();});}
+async function initAuth(){
+  // Gestisce il token nell'URL dopo redirect OAuth (funziona su tutti i browser)
+  const hash=window.location.hash;
+  if(hash&&hash.includes('access_token')){
+    const params=new URLSearchParams(hash.substring(1));
+    const accessToken=params.get('access_token');
+    const refreshToken=params.get('refresh_token');
+    if(accessToken&&refreshToken){
+      const{data,error}=await db.auth.setSession({access_token:accessToken,refresh_token:refreshToken});
+      if(data?.session){
+        window.location.hash='';
+        await handleSession(data.session);
+        return;
+      }
+    }
+  }
+  const{data:{session}}=await db.auth.getSession();
+  if(session)await handleSession(session);
+  else showLogin();
+  db.auth.onAuthStateChange(async(event,session)=>{
+    if(event==='SIGNED_IN'&&session)await handleSession(session);
+    else if(event==='SIGNED_OUT')showLogin();
+  });
+}
 async function handleSession(session){const email=session.user.email;if(!EMAIL_AUTORIZZATE.includes(email)){document.getElementById('login-error').style.display='block';await db.auth.signOut();showLogin();return;}currentUser=session.user;isAdmin=email===EMAIL_ADMIN;const nome=session.user.user_metadata?.full_name||email.split('@')[0];document.getElementById('user-name').textContent=nome;document.getElementById('user-role').textContent=isAdmin?'Amministratore':'Operatore';showApp();await loadAll();mostraTabStorico();impostaManuale();aggiornaScadBadge();}
 function showLogin(){document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
 function showApp(){document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='block';}
