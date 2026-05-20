@@ -190,6 +190,11 @@ html,body{height:100%;background:var(--sand);font-family:'Nunito',sans-serif;col
 </head>
 <body>
 
+<!-- BANNER SESSIONE -->
+<div id="banner-sessione" style="display:none;background:#C0392B;color:#fff;text-align:center;padding:10px;font-size:13px;font-weight:700;font-family:Nunito,sans-serif">
+  Sessione scaduta o non attiva. <a href="index.html" style="color:#fff;text-decoration:underline">Torna al gestionale e accedi di nuovo.</a>
+</div>
+
 <!-- HEADER -->
 <div class="app-header">
   <div class="header-logo">
@@ -531,7 +536,14 @@ const DOMANDE_EXT=[
 ];
 
 // ---- INIT ----
-window.onload=function(){
+window.onload=async function(){
+  // Verifica sessione attiva
+  const {data:{session}}=await db.auth.getSession();
+  if(!session){
+    document.getElementById('banner-sessione').style.display='block';
+    document.querySelector('.main').style.opacity='0.4';
+    document.querySelector('.main').style.pointerEvents='none';
+  }
   buildDisturbi();
   initRg('rg-tipo');
   initRg('rg-22ss');
@@ -779,8 +791,23 @@ function buildDocList(){
 
 // ---- SALVA PORTAFOGLIO ----
 async function salvaPortafoglio(){
+  const btn=document.querySelector('[onclick="salvaPortafoglio()"]');
+  if(btn){btn.disabled=true;btn.textContent='Salvataggio...';}
+
+  // Verifica sessione
+  const {data:{session}}=await db.auth.getSession();
+  if(!session){
+    showMsg('Sessione scaduta. Torna al gestionale e accedi di nuovo.',true);
+    if(btn){btn.disabled=false;btn.innerHTML='&#128190; Salva nel portafoglio';}
+    return;
+  }
+
   const nome=(document.getElementById('f-nome')?.value||'').trim();
-  if(!nome){showMsg('Inserisci il nome del cliente.',true);return;}
+  if(!nome){
+    showMsg('Inserisci il nome del cliente nel passo 1.',true);
+    if(btn){btn.disabled=false;btn.innerHTML='&#128190; Salva nel portafoglio';}
+    return;
+  }
   const cf=(document.getElementById('f-cf')?.value||'').trim().toUpperCase();
   const citta=(document.getElementById('f-citta')?.value||'').trim();
   const tipo=document.querySelector('#rg-tipo .rb.sel')?.dataset.v||'Dipendente';
@@ -791,18 +818,28 @@ async function salvaPortafoglio(){
 
   if(cf){
     const dup=clientiDB.find(c=>(c.cf||'').toUpperCase()===cf);
-    if(dup){showMsg('Cliente gia presente nel portafoglio (CF trovato).',true);return;}
+    if(dup){
+      showMsg('Cliente gia presente nel portafoglio (CF trovato).',true);
+      if(btn){btn.disabled=false;btn.innerHTML='&#128190; Salva nel portafoglio';}
+      return;
+    }
   }
 
-  const{error}=await db.from('clienti').insert({
+  const{data,error}=await db.from('clienti').insert({
     nome,cf,citta,stato:'Nuovo cliente',tipo,
     mod_22ss:mod22ss,data_consulenza:oggi,mansione,sede
-  });
-  if(error){showMsg('Errore salvataggio: '+error.message,true);return;}
+  }).select();
+
+  if(error){
+    showMsg('Errore salvataggio: '+error.message,true);
+    if(btn){btn.disabled=false;btn.innerHTML='&#128190; Salva nel portafoglio';}
+    return;
+  }
 
   await salvaScadenze();
-  showMsg('Cliente salvato nel portafoglio con successo!',false);
   clientiDB.push({nome,cf,mansione});
+  showMsg('Cliente "'+nome+'" salvato nel portafoglio con successo!',false);
+  if(btn){btn.disabled=false;btn.innerHTML='&#10003; Salvato!';}
 }
 
 async function salvaScadenze(){
@@ -826,7 +863,12 @@ function showMsg(txt,isErr){
 
 // ---- TORNA AL GESTIONALE ----
 function tornaGestionale(){
-  if(window.opener){
+  const salvato=document.querySelector('[onclick="salvaPortafoglio()"]')?.textContent?.includes('Salvato');
+  if(!salvato){
+    if(!confirm('Non hai salvato il cliente nel portafoglio. Vuoi tornare al gestionale lo stesso?'))return;
+  }
+  if(window.opener&&!window.opener.closed){
+    window.opener.location.reload();
     window.opener.focus();
     window.close();
   } else {

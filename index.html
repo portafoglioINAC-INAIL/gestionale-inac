@@ -409,7 +409,7 @@ tr:last-child td{border-bottom:none}
       <div class="field"><label>Data prima consulenza</label><input type="date" id="f-data" oninput="togConsulenza(this.value)"></div>
       <div id="wrap-consulenza" style="display:none">
         <div class="field full"><label>Link consulenza (PDF Google Drive)</label>
-          <div class="url-row"><input id="f-consulenza-url" placeholder="Link Google Drive PDF consulenza (condivisibile)..."></div>
+          <div class="url-row"><input id="f-consulenza-url" placeholder="Link Google Drive PDF consulenza (condivisibile)..."><button class="btn btn-ghost" style="padding:6px 10px;font-size:12px;white-space:nowrap" onclick="apriLinkConsulenza()">Apri link</button></div>
           <div class="hint">Il link deve essere accessibile a chiunque lo possieda.</div>
         </div>
       </div>
@@ -620,6 +620,7 @@ function chiudiOv(id){
 function switchTab(name,el){document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('tp-'+name).classList.add('active');if(name==='pratiche')renderPratiche();if(name==='promemoria')renderProm();}
 function tog22(v){document.getElementById('wrap-22ss').style.display=v==='Presente'?'block':'none';}
 function togConsulenza(v){document.getElementById('wrap-consulenza').style.display=v?'block':'none';}
+function apriLinkConsulenza(){const url=document.getElementById('f-consulenza-url').value.trim();if(url)window.open(url,'_blank');else showToast('Inserisci prima il link',true);}
 function togDc(v){document.getElementById('wrap-dc').style.display=v==='Presente'?'block':'none';}
 
 // Raggruppa le pratiche per ncaso+patologia = una domanda MP
