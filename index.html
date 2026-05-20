@@ -541,7 +541,7 @@ let tippTemp=[];
 const MAX_N=500;
 let _saving=false;
 
-async function loginGoogle(){const{error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://portafoglioinac-inail-mc.netlify.app/'}});if(error)showToast('Errore: '+error.message,true);}
+async function loginGoogle(){const{error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://portafoglioinac-inail.github.io/gestionale-inac/'}});if(error)showToast('Errore: '+error.message,true);}
 async function logout(){await db.auth.signOut();window.location.reload();}
 async function initAuth(){
   // Gestisce il token nell'URL dopo redirect OAuth (funziona su tutti i browser)
