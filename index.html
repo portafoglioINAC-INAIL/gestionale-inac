@@ -539,7 +539,7 @@ let currentUser=null,isAdmin=false,clienti=[],pratiche={},promemoria={},appuntam
 let medCorrente='fattorillo',cidx=-1,cidUUID=null,domandaEditKey=null,fissaRef=null,apptEditId=null,storVis=false;
 let tippTemp=[];
 const MAX_N=500;
-let _saving=false;
+// _saving rimosso: ogni funzione gestisce il proprio pulsante
 
 async function loginGoogle(){const{error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://portafoglioinac-inail.github.io/gestionale-inac/'}});if(error)showToast('Errore: '+error.message,true);}
 async function logout(){await db.auth.signOut();window.location.reload();}
@@ -615,7 +615,7 @@ function showSection(id,el){
 function apriOv(id){document.getElementById(id).classList.add('open');}
 function chiudiOv(id){
   document.getElementById(id).classList.remove('open');
-  _saving=false;
+  
 }
 function switchTab(name,el){document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('tp-'+name).classList.add('active');if(name==='pratiche')renderPratiche();if(name==='promemoria')renderProm();}
 function tog22(v){document.getElementById('wrap-22ss').style.display=v==='Presente'?'block':'none';}
@@ -685,7 +685,10 @@ function apriNuovoCliente(){cidx=-1;cidUUID=null;document.getElementById('m-tito
 function apriCliente(id,tab){cidUUID=id;cidx=clienti.findIndex(c=>c.id===id);const c=clienti[cidx];document.getElementById('m-titolo').textContent=c.nome;document.getElementById('f-nome').value=c.nome||'';document.getElementById('f-cf').value=c.cf||'';document.getElementById('f-citta').value=c.citta||'';document.getElementById('f-stato').value=c.stato||'Nuovo cliente';document.getElementById('f-data').value=c.data_consulenza||'';document.getElementById('f-tipo').value=c.tipo||'Dipendente';document.getElementById('f-mansione').value=c.mansione||'';document.getElementById('f-22ss').value=c.mod_22ss||'Assente';document.getElementById('f-22ss-url').value=c.url_22ss||'';document.getElementById('f-consulenza-url').value=c.url_consulenza||'';togConsulenza(c.data_consulenza||'');document.getElementById('f-punteggio-totale').value=c.punteggio_totale||'';document.getElementById('wrap-22ss').style.display=c.mod_22ss==='Presente'?'block':'none';const tabs=['anagrafica','pratiche','promemoria'];document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',tabs[i]===tab));document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));document.getElementById('tp-'+tab).classList.add('active');if(tab==='pratiche')renderPratiche();if(tab==='promemoria')renderProm();apriOv('ov-cliente');}
 
 async function salvaCliente(){
-  if(_saving)return;_saving=true;
+  const btn=document.querySelector('.field-actions .btn-primary[onclick="salvaCliente()"]');
+  if(btn&&btn.disabled)return;
+  if(btn){btn.disabled=true;btn.textContent='Salvataggio...';}
+  try{void 0;}catch(e){}
   try{
     const obj={nome:document.getElementById('f-nome').value.trim(),cf:document.getElementById('f-cf').value.trim().toUpperCase(),citta:document.getElementById('f-citta').value.trim(),stato:document.getElementById('f-stato').value,data_consulenza:document.getElementById('f-data').value||null,tipo:document.getElementById('f-tipo').value,mansione:document.getElementById('f-mansione').value.trim(),mod_22ss:document.getElementById('f-22ss').value,url_22ss:document.getElementById('f-22ss-url').value.trim(),url_consulenza:document.getElementById('f-consulenza-url').value.trim(),punteggio_totale:document.getElementById('f-punteggio-totale').value.trim()};
     if(!obj.nome){alert('Inserisci almeno il nome');return;}
@@ -697,7 +700,7 @@ async function salvaCliente(){
   const azione=cidUUID?`Modificato cliente: ${nomeCliente}`:`Nuovo cliente inserito: ${nomeCliente}`;
   logStorico(azione,currentUser?currentUser.email.split('@')[0]:'');
   showToast('Cliente salvato');chiudiOv('ov-cliente');await loadClienti();
-  }finally{_saving=false;}
+  }finally{}
 }
 async function delCliente(id){if(!confirm('Eliminare questo cliente e tutte le sue pratiche?'))return;const{error}=await db.from('clienti').delete().eq('id',id);if(error){showToast('Errore',true);return;}showToast('Cliente eliminato');await loadClienti();}
 
@@ -725,7 +728,7 @@ function renderPratiche(){
         <strong>${g.patologia||'Patologia non specificata'}</strong>
         ${g.punt_riconosciuto?`<span class="domanda-punt">Punteggio riconosciuto: ${g.punt_riconosciuto}</span>`:''}
         <div class="domanda-actions">
-          <button class="btn btn-edit" onclick="apriFormDomanda('${key}')">Modifica Modifica</button>
+          <button class="btn btn-edit" onclick="apriFormDomanda('${key}')">Modifica</button>
           <button class="btn btn-danger" onclick="delDomanda('${g.ncaso||'__'}','${g.patologia||'__'}')">🗑 Elimina</button>
         </div>
       </div>
@@ -800,9 +803,11 @@ function addTipp(tipp){if(tippTemp.find(t=>t.tipp===tipp)){showToast(tipp+' gia 
 function rimuoviTipp(i){tippTemp.splice(i,1);renderTippLista();}
 
 async function salvaDomanda(){
-  if(_saving)return;_saving=true;
+  const btnD=document.querySelector('[onclick="salvaDomanda()"]');
+  if(btnD&&btnD.disabled)return;
+  if(btnD){btnD.disabled=true;btnD.textContent='Salvataggio...';}
   try{
-  if(!cidUUID)return;
+  if(!cidUUID){if(btnD){btnD.disabled=false;btnD.textContent='Salva domanda';}return;}
   if(!tippTemp.length){alert('Aggiungi almeno una tipologia di pratica');return;}
   const patologia=document.getElementById('d-patologia').value.trim();
   if(!patologia){alert('Inserisci la patologia');return;}
@@ -815,7 +820,9 @@ async function salvaDomanda(){
   }
   for(const t of tippTemp){const{error}=await db.from('pratiche').insert({...base,tippratica:t.tipp,stato:t.stato,data_stato:t.data_stato||null});if(error){showToast('Errore: '+error.message,true);return;}}
     logStorico('Domanda MP salvata: '+document.getElementById('d-patologia').value,currentUser?currentUser.email.split('@')[0]:'');showToast('Domanda MP salvata ✓');chiudiOv('ov-domanda');await loadPratiche(cidUUID);renderPratiche();renderClienti();
-  }finally{_saving=false;}
+  }finally{
+    if(btnD){btnD.disabled=false;btnD.textContent='Salva domanda';}
+  }
 }
 
 async function delSingolaPratica(id){if(!confirm('Eliminare questa singola pratica dalla domanda?'))return;await db.from('pratiche').delete().eq('id',id);await loadPratiche(cidUUID);renderPratiche();renderClienti();}
@@ -911,7 +918,7 @@ async function archiviaGiornata(data,med){
   for(const a of daArchiviare){await db.from('appuntamenti').update({storico:true}).eq('id',a.id);}
   await loadAppuntamenti();renderMed();showToast('Giornata archiviata');
 }
-function aCard(a,med,isStor=false){const hasD=a.data_appuntamento&&a.ora_appuntamento;const oraEl=hasD?`<div class="a-ora">${a.ora_appuntamento.substring(0,5)}</div>`:`<div class="a-ora vuota">In<br>attesa</div>`;const opStr=a.operatore?`<span class="pill pill-op">👤 ${a.operatore}</span>`:'';let acts='';if(!isStor){if(!hasD)acts+=`<button class="btn btn-success" onclick="apriFissa('${a.id}')">📅 Fissa</button>`;acts+=`<div style="display:flex;gap:4px;margin-top:5px"><button class="btn btn-edit" onclick="editAppt('${a.id}')">Modifica</button><button class="btn btn-danger" onclick="archAppt('${a.id}')">Archivia</button><button class="btn btn-danger" onclick="delAppt('${a.id}')">🗑</button></div>`;}else{acts=`<button class="btn btn-ghost" onclick="ripAppt('${a.id}')">Ripristina Ripristina</button>`;}return`<div class="a-card ${hasD&&!isStor?'fissato':''} ${isStor?'storico':''}">${oraEl}<div class="a-body"><div class="a-nome" style="cursor:pointer;text-decoration:underline dotted" onclick="apriClienteDaNome('${a.nome_paziente}')">${a.nome_paziente}</div><div style="margin:3px 0"><span class="badge ${rCls(a.richiesta)}">${rLabel(a.richiesta)}</span>${a.patologia&&a.richiesta==='primo'?` <span style="font-size:11px;color:var(--text-light)">- ${a.patologia}</span>`:''}</div><div class="a-meta">${a.data_appuntamento?`<span>📅 ${fmtD(a.data_appuntamento)}</span>`:''}${a.telefono?`<span>Tel. ${a.telefono}</span>`:''}${opStr}</div>${a.note?`<div style="font-size:12px;color:var(--text-mid);margin-top:4px;font-style:italic">${a.note}</div>`:''}</div><div class="a-actions">${acts}</div></div>`;}
+function aCard(a,med,isStor=false){const hasD=a.data_appuntamento&&a.ora_appuntamento;const oraEl=hasD?`<div class="a-ora">${a.ora_appuntamento.substring(0,5)}</div>`:`<div class="a-ora vuota">In<br>attesa</div>`;const opStr=a.operatore?`<span class="pill pill-op">👤 ${a.operatore}</span>`:'';let acts='';if(!isStor){if(!hasD)acts+=`<button class="btn btn-success" onclick="apriFissa('${a.id}')">📅 Fissa</button>`;acts+=`<div style="display:flex;gap:4px;margin-top:5px"><button class="btn btn-edit" onclick="editAppt('${a.id}')">Modifica</button><button class="btn btn-danger" onclick="archAppt('${a.id}')">Archivia</button><button class="btn btn-danger" onclick="delAppt('${a.id}')">🗑</button></div>`;}else{acts=`<button class="btn btn-ghost" onclick="ripAppt('${a.id}')">Ripristina</button>`;}return`<div class="a-card ${hasD&&!isStor?'fissato':''} ${isStor?'storico':''}">${oraEl}<div class="a-body"><div class="a-nome" style="cursor:pointer;text-decoration:underline dotted" onclick="apriClienteDaNome('${a.nome_paziente}')">${a.nome_paziente}</div><div style="margin:3px 0"><span class="badge ${rCls(a.richiesta)}">${rLabel(a.richiesta)}</span>${a.patologia&&a.richiesta==='primo'?` <span style="font-size:11px;color:var(--text-light)">- ${a.patologia}</span>`:''}</div><div class="a-meta">${a.data_appuntamento?`<span>📅 ${fmtD(a.data_appuntamento)}</span>`:''}${a.telefono?`<span>Tel. ${a.telefono}</span>`:''}${opStr}</div>${a.note?`<div style="font-size:12px;color:var(--text-mid);margin-top:4px;font-style:italic">${a.note}</div>`:''}</div><div class="a-actions">${acts}</div></div>`;}
 function togStor(){storVis=!storVis;renderMed();}
 function apriClienteDaNome(nome){
   const c=clienti.find(x=>x.nome===nome);
