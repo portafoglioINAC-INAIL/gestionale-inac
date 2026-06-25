@@ -448,7 +448,8 @@ html,body{height:100%;background:var(--sand);font-family:'Nunito',sans-serif;col
       <div class="divider"></div>
       <div id="save-msg"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="generaPDF()">&#128196; Genera PDF</button>
+        <button class="btn btn-primary" onclick="generaPDF()">&#128196; Genera PDF interno</button>
+        <button class="btn" style="border-color:#1A5C38;color:#1A5C38" onmouseover="this.style.background='#E8F3EC'" onmouseout="this.style.background='#fff'" onclick="generaPDFCliente()">&#128203; Genera PDF per il cliente</button>
         <button class="btn" onclick="salvaPortafoglio()">&#128190; Salva nel portafoglio</button>
         <button class="btn" onclick="tornaGestionale()" style="border-color:#C0392B;color:#C0392B" onmouseover="this.style.background='#FCE8E6'" onmouseout="this.style.background='#fff'">&#10006; Fine — torna al gestionale</button>
       </div>
@@ -496,6 +497,13 @@ const DOC={
   'Dipendente':['Mandati di patrocinio','Modulo consenso alla trattazione','Denuncia di malattia professionale da DL','Certificato medico introduttivo','Referti medici','Estratto contributivo INPS','Modello 177/Prest. (Mod. IBAN)','Anamnesi lavorativa','Cartella sanitaria e di rischio del lavoratore','DVR'],
   'Agricoltura (CD)':['Mandati di patrocinio','Modulo consenso alla trattazione','Certificato medico introduttivo','Referti medici','Estratto contributivo INPS','Modello 177/Prest. (Mod. IBAN)','Anamnesi lavorativa','Autodichiarazione ex SCAU','Fascicolo aziendale','Visura dei terreni','Registri UMA degli ultimi 5 anni','Libretto dei mezzi agricoli','Scheda macchinari','Registri di stalla ultimi 5 anni (se allevatore)'],
   'Artigiano':['Mandati di patrocinio','Modulo consenso alla trattazione','Denuncia di malattia professionale','Certificato medico introduttivo','Referti medici','Estratto contributivo INPS','Modello 177/Prest. (Mod. IBAN)','Anamnesi lavorativa','Fatturato degli ultimi 5 anni','Registro dei beni ammortizzabili (cespiti)','DVR (se previsto dalla legge)'],
+};
+
+// Documenti che il CLIENTE deve materialmente procurarsi (esclude quanto prepara l'operatore INAC)
+const DOC_CLIENTE={
+  'Dipendente':['Referti medici degli accertamenti svolti','Certificato medico introduttivo','Il Suo codice IBAN','Cartella sanitaria e di rischio (la richiede al datore di lavoro)','Documento di Valutazione dei Rischi - DVR (lo richiede al datore di lavoro)'],
+  'Agricoltura (CD)':['Referti medici degli accertamenti svolti','Certificato medico introduttivo','Il Suo codice IBAN','Fascicolo aziendale','Visura dei terreni','Registri UMA degli ultimi 5 anni','Libretto dei mezzi agricoli','Scheda dei macchinari utilizzati','Registri di stalla degli ultimi 5 anni (se allevatore)'],
+  'Artigiano':['Referti medici degli accertamenti svolti','Certificato medico introduttivo','Il Suo codice IBAN','Fatturato degli ultimi 5 anni','Registro dei beni ammortizzabili (cespiti)','Documento di Valutazione dei Rischi - DVR (se previsto)'],
 };
 
 const DOMANDE_LAV={
@@ -861,6 +869,14 @@ function showMsg(txt,isErr){
   setTimeout(()=>{el.innerHTML='';},5000);
 }
 
+const CONTATTI_OP={
+  'Matteo Longo':{email:'m.longo@cia.it',tel:'0733 261976 - 379 3738515'},
+  'Morena Marconi':{email:'m.marconi@cia.it',tel:'0733 672591 - 351 3672591'},
+  'Irene Bibiagi':{email:'i.bibiagi@cia.it',tel:'0733 974141'},
+  'Ilaria Compagnucci':{email:'i.compagnucci@cia.it',tel:'0733 261976 - 379 3738515'},
+  'Anna Compagnone':{email:'a.compagnone@cia.it',tel:'0733 672591 - 351 3672591'},
+};
+
 // ---- TORNA AL GESTIONALE ----
 function tornaGestionale(){
   const salvato=document.querySelector('[onclick="salvaPortafoglio()"]')?.textContent?.includes('Salvato');
@@ -877,6 +893,111 @@ function tornaGestionale(){
 }
 
 // ---- GENERA PDF ----
+// ---- TRADUZIONE PATOLOGIE IN LINGUAGGIO SEMPLICE ----
+function traduciPatologia(nome){
+  const map={
+    'Ipoacusia da rumore':'un possibile danno all\\'udito legato al rumore del lavoro',
+    'Sovraccarico biomeccanico arti superiori':'un possibile sovraccarico alle spalle, braccia o mani per i movimenti ripetuti del lavoro',
+    'Spondilodiscopatie tratto lombare':'un possibile problema alla schiena (zona bassa) legato al lavoro',
+    'Spondilodiscopatie tratto cervicale':'un possibile problema al collo legato al lavoro',
+    'Dermatite allergica / irritativa da contatto':'un possibile problema alla pelle legato a sostanze usate sul lavoro',
+    'Broncopneumopatia / Pneumoconiosi':'un possibile problema respiratorio legato al lavoro',
+    'Sovraccarico biomeccanico ginocchia':'un possibile sovraccarico alle ginocchia per il lavoro svolto',
+  };
+  return map[nome]||nome.toLowerCase();
+}
+
+function traduciReferto(r){
+  const map={
+    'Audiometria':'l\\'esame dell\\'udito (audiometria)',
+    'Visita ORL':'la visita dall\\'otorino',
+    'Ecografia spalle':'l\\'ecografia alle spalle',
+    'Ecografia gomiti':'l\\'ecografia ai gomiti',
+    'Elettromiografia':'l\\'elettromiografia',
+    'RMN rachide lombare':'la risonanza alla schiena (zona bassa)',
+    'RMN rachide cervicale':'la risonanza al collo',
+    'Visita ortopedica':'la visita dall\\'ortopedico',
+    'Visita dermatologica':'la visita dal dermatologo',
+    'Patch test':'le prove allergiche sulla pelle (patch test)',
+    'Spirometria':'la prova della respirazione (spirometria)',
+    'TAC torace':'la TAC al torace',
+    'Visita pneumologica':'la visita dallo pneumologo',
+    'RMN ginocchia':'la risonanza alle ginocchia',
+  };
+  return map[r]||r.toLowerCase();
+}
+
+function generaPDFCliente(){
+  const nome=document.getElementById('f-nome')?.value||'--';
+  const op=document.getElementById('f-op')?.value||'--';
+  const contatti=CONTATTI_OP[op]||{email:'--',tel:'--'};
+  const tipo=document.querySelector('#rg-tipo .rb.sel')?.dataset.v||'Dipendente';
+  const oggi=new Date().toLocaleDateString('it-IT');
+
+  const disturbi=getDisturbiSel();
+  const sugg=[];const ref=new Set();
+  if(disturbi.includes('Perdita udito')||disturbi.includes('Ronzii o fischi')){sugg.push('Ipoacusia da rumore');ref.add('Audiometria');ref.add('Visita ORL');}
+  if(disturbi.some(d=>['Spalle','Gomiti','Polsi / mani / dita','Sindrome tunnel carpale'].includes(d))){sugg.push('Sovraccarico biomeccanico arti superiori');if(disturbi.includes('Spalle'))ref.add('Ecografia spalle');if(disturbi.includes('Gomiti'))ref.add('Ecografia gomiti');if(disturbi.includes('Polsi / mani / dita')||disturbi.includes('Sindrome tunnel carpale'))ref.add('Elettromiografia');}
+  if(disturbi.includes('Rachide lombare')){sugg.push('Spondilodiscopatie tratto lombare');ref.add('RMN rachide lombare');ref.add('Visita ortopedica');}
+  if(disturbi.includes('Rachide cervicale')){sugg.push('Spondilodiscopatie tratto cervicale');ref.add('RMN rachide cervicale');}
+  if(disturbi.some(d=>['Problemi di pelle','Allergie cutanee'].includes(d))){sugg.push('Dermatite allergica / irritativa da contatto');ref.add('Visita dermatologica');ref.add('Patch test');}
+  if(disturbi.includes('Disturbi respiratori')){sugg.push('Broncopneumopatia / Pneumoconiosi');ref.add('Spirometria');ref.add('TAC torace');ref.add('Visita pneumologica');}
+  if(disturbi.includes('Ginocchia')){sugg.push('Sovraccarico biomeccanico ginocchia');ref.add('RMN ginocchia');}
+
+  const patologieTesto=sugg.length>0
+    ?'<ul>'+sugg.map(s=>'<li>Dal colloquio è emerso '+traduciPatologia(s)+'.</li>').join('')+'</ul>'
+    :'<p>Dal colloquio non sono emersi elementi sufficienti per individuare una possibile malattia professionale. Verificheremo insieme eventuali ulteriori accertamenti.</p>';
+
+  const refertiTesto=ref.size>0
+    ?'<ul>'+[...ref].map(r=>'<li>'+traduciReferto(r)+'</li>').join('')+'</ul>'
+    :'<p>Al momento non è necessario alcun accertamento specifico.</p>';
+
+  const docsCliente=DOC_CLIENTE[tipo]||DOC_CLIENTE['Dipendente'];
+  const docsTesto='<ul>'+docsCliente.map(d=>'<li>'+d+'</li>').join('')+'</ul>';
+
+  const scadRows=Array.from(document.querySelectorAll('#scad-list .scad-row')).map(r=>{
+    const ins=r.querySelectorAll('input');
+    return (ins[0]?.value&&ins[1]?.value)?{nota:ins[0].value,data:ins[1].value}:null;
+  }).filter(Boolean);
+  const scadTesto=scadRows.length>0
+    ?'<ul>'+scadRows.map(s=>'<li><strong>'+new Date(s.data).toLocaleDateString('it-IT')+'</strong> — '+s.nota+'</li>').join('')+'</ul>'
+    :'<p>Nessun appuntamento o promemoria fissato per ora.</p>';
+
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Promemoria consulenza - '+nome+'</title>'
+    +'<style>body{font-family:Arial,sans-serif;font-size:13px;color:#1a1a1a;margin:0;padding:32px;line-height:1.6}'
+    +'.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0D2B6B;padding-bottom:16px;margin-bottom:20px}'
+    +'.logo{background:#0D2B6B;color:#fff;font-weight:700;font-size:13px;padding:6px 16px;border-radius:4px;letter-spacing:1px}'
+    +'.title{font-size:19px;font-weight:700;color:#0D2B6B;margin-top:6px}'
+    +'.sub{font-size:12px;color:#666;margin-top:3px}'
+    +'h2{font-size:13px;color:#fff;background:#0D2B6B;padding:7px 12px;border-radius:3px;margin:20px 0 10px}'
+    +'ul{margin:6px 0;padding-left:22px}li{padding:4px 0;font-size:13px}'
+    +'.intro{font-size:13px;color:#333;margin-bottom:6px}'
+    +'.biglietto{background:#F5F8FF;border:1px solid #c8d5e8;border-radius:8px;padding:16px 18px;margin-top:24px;display:flex;justify-content:space-between;align-items:center}'
+    +'.bv-name{font-size:15px;font-weight:700;color:#0D2B6B}'
+    +'.bv-role{font-size:11px;color:#666;margin-bottom:8px}'
+    +'.bv-contact{font-size:12px;color:#333;margin-top:2px}'
+    +'.bv-logo{background:#0D2B6B;color:#fff;font-weight:700;font-size:12px;padding:5px 14px;border-radius:4px}'
+    +'footer{margin-top:24px;border-top:1px solid #ccc;padding-top:10px;font-size:10px;color:#999;text-align:center}'
+    +'@media print{.no-print{display:none}}</style></head><body>'
+    +'<div class="header"><div><div class="logo">INAC</div><div class="title">Promemoria della Sua consulenza</div><div class="sub">Patronato CIA — Sede di Macerata</div></div>'
+    +'<div style="text-align:right;font-size:12px;color:#666">Data colloquio<br><strong>'+oggi+'</strong></div></div>'
+    +'<p class="intro">Gentile <strong>'+nome+'</strong>, di seguito un riepilogo semplice di quanto emerso durante il nostro colloquio, da conservare come promemoria.</p>'
+    +'<h2>Cosa è emerso dal colloquio</h2>'+patologieTesto
+    +'<h2>Esami da procurarsi (referti medici)</h2>'+refertiTesto
+    +'<h2>Cosa deve portarci</h2>'+docsTesto
+    +'<h2>Prossimi appuntamenti e scadenze</h2>'+scadTesto
+    +'<div class="biglietto"><div><div class="bv-name">'+op+'</div><div class="bv-role">Operatore Patronato INAC — CIA Macerata</div>'
+    +'<div class="bv-contact">&#9742; '+contatti.tel+'</div><div class="bv-contact">&#9993; '+contatti.email+'</div></div>'
+    +'<div class="bv-logo">INAC</div></div>'
+    +'<footer>Questo documento è un promemoria informativo e non sostituisce la documentazione ufficiale della pratica.</footer>'
+    +'<br><button class="no-print" onclick="window.print()" style="background:#0D2B6B;color:#fff;border:none;padding:11px 26px;border-radius:8px;font-size:14px;cursor:pointer;font-family:Arial">Stampa / Salva PDF</button>'
+    +'</body></html>';
+
+  const win=window.open('','_blank');
+  if(win){win.document.write(html);win.document.close();}
+  else{alert('Abilita i popup del browser per generare il PDF.');}
+}
+
 function generaPDF(){
   const nome=document.getElementById('f-nome')?.value||'--';
   const cf=document.getElementById('f-cf')?.value||'--';
