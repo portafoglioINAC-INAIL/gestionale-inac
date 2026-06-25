@@ -688,7 +688,6 @@ async function salvaCliente(){
   const btn=document.querySelector('.field-actions .btn-primary[onclick="salvaCliente()"]');
   if(btn&&btn.disabled)return;
   if(btn){btn.disabled=true;btn.textContent='Salvataggio...';}
-  try{void 0;}catch(e){}
   try{
     const obj={nome:document.getElementById('f-nome').value.trim(),cf:document.getElementById('f-cf').value.trim().toUpperCase(),citta:document.getElementById('f-citta').value.trim(),stato:document.getElementById('f-stato').value,data_consulenza:document.getElementById('f-data').value||null,tipo:document.getElementById('f-tipo').value,mansione:document.getElementById('f-mansione').value.trim(),mod_22ss:document.getElementById('f-22ss').value,url_22ss:document.getElementById('f-22ss-url').value.trim(),url_consulenza:document.getElementById('f-consulenza-url').value.trim(),punteggio_totale:document.getElementById('f-punteggio-totale').value.trim()};
     if(!obj.nome){alert('Inserisci almeno il nome');return;}
@@ -697,10 +696,14 @@ async function salvaCliente(){
     else{const res=await db.from('clienti').insert(obj);error=res.error;}
     if(error){showToast('Errore: '+error.message,true);return;}
     const nomeCliente=document.getElementById('f-nome').value.trim();
-  const azione=cidUUID?`Modificato cliente: ${nomeCliente}`:`Nuovo cliente inserito: ${nomeCliente}`;
-  logStorico(azione,currentUser?currentUser.email.split('@')[0]:'');
-  showToast('Cliente salvato');chiudiOv('ov-cliente');await loadClienti();
-  }finally{}
+    const azione=cidUUID?`Modificato cliente: ${nomeCliente}`:`Nuovo cliente inserito: ${nomeCliente}`;
+    logStorico(azione,currentUser?currentUser.email.split('@')[0]:'');
+    showToast('Cliente salvato');chiudiOv('ov-cliente');await loadClienti();
+  }catch(e){
+    showToast('Errore imprevisto: '+e.message,true);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Salva';}
+  }
 }
 async function delCliente(id){if(!confirm('Eliminare questo cliente e tutte le sue pratiche?'))return;const{error}=await db.from('clienti').delete().eq('id',id);if(error){showToast('Errore',true);return;}showToast('Cliente eliminato');await loadClienti();}
 
